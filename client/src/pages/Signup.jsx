@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+// 🛠️ FIX 1: Import your API base URL configuration mapping
+import API_URL from '../config/api';
 
 const Signup = () => {
   const [name, setName] = useState('');
@@ -13,16 +15,23 @@ const Signup = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/users/register', {
+      // 🛠️ FIX 2: Prepend the API_URL context string to route the network request correctly
+      const response = await fetch(`${API_URL}/api/users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await response.json();
+      // 🛠️ FIX 3: Safe Parsing Engine — checks content-type before trying to read JSON
+      const contentType = response.headers.get("content-type");
+      let data = {};
+      
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to register');
+        throw new Error(data.error || data.message || `Registration failed with status code ${response.status}`);
       }
 
       // Redirect directly to login page so the user can sign in manually
@@ -38,7 +47,7 @@ const Signup = () => {
         <h2 className="text-3xl font-bold text-primary mb-2 uppercase tracking-wide text-center">Create Account</h2>
         <p className="text-gray-500 text-center mb-8">Join ShoeStop & More for exclusive fashion deals.</p>
 
-        {error && <div className="bg-red-100 text-red-700 p-3 mb-4 text-sm text-center">{error}</div>}
+        {error && <div className="bg-red-100 text-red-700 p-3 mb-4 text-sm text-center border border-red-200">{error}</div>}
 
         <form onSubmit={handleSignup} className="space-y-6">
           <div>
