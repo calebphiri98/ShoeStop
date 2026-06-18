@@ -3,10 +3,10 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import API_URL from '../config/api';
 
-// Subcomponent imports matching your project structure
+// Subcomponent imports matching layout specifications
 import AdminOverview from '../components/admin/AdminOverview';
 import AdminOrders from '../components/admin/AdminOrders';
-import Signup from './Signup'; // Direct reference to your existing Signup page component
+import Signup from './Signup'; 
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -15,12 +15,12 @@ const AdminDashboard = () => {
   // Navigation Routing Tab State
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Real Database States
+  // Relational Backoffice State Targets
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Middleware Response Validator
+  // Middleware Response Validation Engine
   const handleResponse = async (res) => {
     const contentType = res.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
@@ -67,24 +67,39 @@ const AdminDashboard = () => {
 
   // Track and Update Order Lifecycle State
   const handleUpdateStatus = async (orderId, newStatus) => {
+    const originalOrders = [...orders];
+
+    // Optimistic UI update for smooth, zero-latency transitions
+    setOrders(prevOrders => 
+      prevOrders.map(order => {
+        const currentId = order.id || order._id;
+        return currentId === orderId ? { ...order, status: newStatus } : order;
+      })
+    );
+
+    // Explicitly parse and sanitize string keys to prevent database string serialization problems
+    const cleanId = String(orderId).replace('#', '');
+
     try {
-      const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
-        method: 'PUT',
+      // TARGETING THE EXPLICIT STATUS TARGET PATCH ROUTE
+      const response = await fetch(`${API_URL}/api/orders/${cleanId}/status`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user.token}`
         },
         body: JSON.stringify({ status: newStatus })
       });
+      
       await handleResponse(response);
-      alert(`Order #${orderId} set to ${newStatus}`);
-      fetchDashboardData(); // Refresh list data
     } catch (err) {
-      alert(err.message);
+      // Fallback rollback strategy upon execution fault
+      setOrders(originalOrders);
+      alert(`Status Synchronization Failed: ${err.message}`);
     }
   };
 
-  // Administrative User Deletion Pipeline
+  // Administrative User Purge Execution Matrix
   const handleDeleteUser = async (userId, userName) => {
     if (!window.confirm(`Are you absolutely sure you want to completely remove ${userName}?`)) {
       return;
@@ -99,7 +114,7 @@ const AdminDashboard = () => {
       });
       await handleResponse(response);
       alert(`Successfully purged ${userName} from the core system directories.`);
-      fetchDashboardData(); // Refresh active user state tracking mappings
+      fetchDashboardData(); 
     } catch (err) {
       alert(err.message);
     }
@@ -110,7 +125,7 @@ const AdminDashboard = () => {
   return (
     <div className="flex min-h-screen bg-neutralBg font-sans">
       
-      {/* SIDEBAR COMPONENT PANEL */}
+      {/* SIDEBAR PANEL */}
       <aside className="w-64 bg-primary text-secondary flex flex-col justify-between p-6 shadow-xl">
         <div>
           <h1 className="text-2xl font-bold tracking-widest text-accent uppercase mb-10 border-b border-accent/20 pb-4">ShoeStop Admin</h1>
@@ -155,27 +170,21 @@ const AdminDashboard = () => {
           <p className="text-gray-500 font-medium">Synchronizing backoffice relational matrices...</p>
         ) : (
           <>
-            {/* VIEW A: OVERVIEW METRIC SUMMARY SUBCOMPONENT */}
             {activeTab === 'overview' && (
               <AdminOverview orders={orders} customers={customers} />
             )}
 
-            {/* VIEW B: FULL ORDER MANAGEMENT PIPELINE SUBCOMPONENT */}
             {activeTab === 'orders' && (
               <AdminOrders orders={orders} onUpdateStatus={handleUpdateStatus} />
             )}
 
-            {/* VIEW C: MANAGE USERS SPLIT INTERFACE DEPLOYMENT */}
             {activeTab === 'customers' && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* LEFT COLUMN: SHARED SIGNUP UTILITY INLINE INJECT */}
                 <div className="bg-white p-6 shadow-sm border border-gray-100 lg:col-span-1 h-fit rounded">
                   <h3 className="text-md font-bold uppercase tracking-wide text-primary mb-4 border-b border-gray-100 pb-2">➕ Register Account</h3>
                   <Signup />
                 </div>
 
-                {/* RIGHT COLUMN: COMPLETE ACTIVE USERS PLATFORM DIRECTORY */}
                 <div className="bg-white p-6 shadow-sm border border-gray-100 lg:col-span-2 rounded">
                   <h3 className="text-md font-bold uppercase tracking-wide text-primary mb-4 border-b border-gray-100 pb-2">
                     👥 Platform Directory ({customers.length})
@@ -201,7 +210,6 @@ const AdminDashboard = () => {
                               </span>
                             </td>
                             <td className="p-3 text-center">
-                              {/* Preventive constraint so logged-in admin doesn't delete themselves */}
                               {user.email !== c.email ? (
                                 <button
                                   onClick={() => handleDeleteUser(c._id || c.id, c.name)}
@@ -219,7 +227,6 @@ const AdminDashboard = () => {
                     </table>
                   </div>
                 </div>
-
               </div>
             )}
           </>
@@ -230,165 +237,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-
-
-// import React, { useState, useEffect, useCallback } from 'react';
-// import { useAuth } from '../context/AuthContext';
-// import { useNavigate } from 'react-router-dom';
-// import API_URL from '../config/api';
-
-// // Subcomponent imports matching your project structure
-// import AdminOverview from '../components/admin/AdminOverview';
-// import AdminOrders from '../components/admin/AdminOrders';
-// import Signup from './Signup'; // Direct reference to your existing Signup page component
-
-// const AdminDashboard = () => {
-//   const { user, logout } = useAuth();
-//   const navigate = useNavigate();
-  
-//   // Navigation Routing Tab State
-//   const [activeTab, setActiveTab] = useState('overview');
-
-//   // Real Database States
-//   const [orders, setOrders] = useState([]);
-//   const [customers, setCustomers] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   // Middleware Response Validator
-//   const handleResponse = async (res) => {
-//     const contentType = res.headers.get("content-type");
-//     if (contentType && contentType.includes("application/json")) {
-//       const data = await res.json();
-//       if (!res.ok) throw new Error(data.error || data.message || "API request failed");
-//       return data;
-//     }
-//     const text = await res.text();
-//     throw new Error(`Server returned HTML instead of JSON: ${res.status}`);
-//   };
-
-//   // Fetch Dashboard Database Pipelines
-//   const fetchDashboardData = useCallback(async () => {
-//     if (!user?.token) return;
-//     setLoading(true);
-//     try {
-//       // Fetch Orders
-//       const resOrders = await fetch(`${API_URL}/api/orders`, {
-//         headers: { 'Authorization': `Bearer ${user.token}` }
-//       });
-//       const dataOrders = await handleResponse(resOrders);
-//       setOrders(Array.isArray(dataOrders) ? dataOrders : []);
-
-//       // Fetch Users/Customers
-//       const resUsers = await fetch(`${API_URL}/api/users`, {
-//         headers: { 'Authorization': `Bearer ${user.token}` }
-//       });
-//       const dataUsers = await handleResponse(resUsers);
-//       setCustomers(Array.isArray(dataUsers) ? dataUsers : []);
-//     } catch (err) {
-//       console.error("Dashboard synchronization fault:", err);
-//     } finally {
-//       setLoading(false);
-//     }
-//   }, [user]);
-
-//   useEffect(() => {
-//     if (!user || user.role !== 'admin') {
-//       navigate('/login');
-//       return;
-//     }
-//     fetchDashboardData();
-//   }, [user, navigate, fetchDashboardData]);
-
-//   // Track and Update Order Lifecycle State
-//   const handleUpdateStatus = async (orderId, newStatus) => {
-//     try {
-//       const response = await fetch(`${API_URL}/api/orders/${orderId}`, {
-//         method: 'PUT',
-//         headers: {
-//           'Content-Type': 'application/json',
-//           'Authorization': `Bearer ${user.token}`
-//         },
-//         body: JSON.stringify({ status: newStatus })
-//       });
-//       await handleResponse(response);
-//       alert(`Order #${orderId} set to ${newStatus}`);
-//       fetchDashboardData(); // Refresh list data
-//     } catch (err) {
-//       alert(err.message);
-//     }
-//   };
-
-//   if (!user) return null;
-
-//   return (
-//     <div className="flex min-h-screen bg-neutralBg font-sans">
-      
-//       {/* SIDEBAR COMPONENT PANEL */}
-//       <aside className="w-64 bg-primary text-secondary flex flex-col justify-between p-6 shadow-xl">
-//         <div>
-//           <h1 className="text-2xl font-bold tracking-widest text-accent uppercase mb-10 border-b border-accent/20 pb-4">ShoeStop Admin</h1>
-//           <nav className="space-y-2 text-sm uppercase tracking-wider font-semibold">
-//             <button 
-//               onClick={() => setActiveTab('overview')} 
-//               className={`w-full text-left px-4 py-3 rounded transition-all duration-200 ${activeTab === 'overview' ? 'bg-accent text-primary font-bold' : 'hover:bg-accent/10 hover:text-accent'}`}
-//             >
-//               📊 Overview
-//             </button>
-//             <button 
-//               onClick={() => setActiveTab('orders')} 
-//               className={`w-full text-left px-4 py-3 rounded transition-all duration-200 ${activeTab === 'orders' ? 'bg-accent text-primary font-bold' : 'hover:bg-accent/10 hover:text-accent'}`}
-//             >
-//               📦 Track Orders ({orders.length})
-//             </button>
-//             <button 
-//               onClick={() => setActiveTab('customers')} 
-//               className={`w-full text-left px-4 py-3 rounded transition-all duration-200 ${activeTab === 'customers' ? 'bg-accent text-primary font-bold' : 'hover:bg-accent/10 hover:text-accent'}`}
-//             >
-//               👥 Manage Users
-//             </button>
-//           </nav>
-//         </div>
-//         <div className="text-xs text-gray-400 font-medium">Logged in as Admin: <span className="text-white block mt-1">{user.email}</span></div>
-//       </aside>
-
-//       {/* CORE WORKSPACE ENTRY CONTAINER */}
-//       <main className="flex-1 p-10 overflow-y-auto">
-//         <header className="flex justify-between items-center mb-10 pb-4 border-b border-gray-200">
-//           <h2 className="text-3xl font-bold uppercase tracking-wide text-primary">
-//             {activeTab === 'overview' && 'Dashboard Overview'}
-//             {activeTab === 'orders' && 'Order Lifecycle Management'}
-//             {activeTab === 'customers' && 'Account Provisioning & Users'}
-//           </h2>
-//           <button onClick={logout} className="bg-primary text-secondary px-5 py-2 font-bold uppercase text-xs tracking-wider border border-transparent hover:bg-transparent hover:text-primary hover:border-primary transition-all duration-200">
-//             Secure Logout
-//           </button>
-//         </header>
-
-//         {loading ? (
-//           <p className="text-gray-500 font-medium">Synchronizing backoffice relational matrices...</p>
-//         ) : (
-//           <>
-//             {/* VIEW A: OVERVIEW METRIC SUMMARY SUBCOMPONENT */}
-//             {activeTab === 'overview' && (
-//               <AdminOverview orders={orders} customers={customers} />
-//             )}
-
-//             {/* VIEW B: FULL ORDER MANAGEMENT PIPELINE SUBCOMPONENT */}
-//             {activeTab === 'orders' && (
-//               <AdminOrders orders={orders} onUpdateStatus={handleUpdateStatus} />
-//             )}
-
-//             {/* VIEW C: MANAGE USERS DIRECTLY RENDERED FROM THE SIGNUP PAGE COMPONENT */}
-//             {activeTab === 'customers' && (
-//               <div className="bg-white p-6 shadow-sm border border-gray-100 rounded">
-//                 <Signup />
-//               </div>
-//             )}
-//           </>
-//         )}
-//       </main>
-//     </div>
-//   );
-// };
-
-// export default AdminDashboard;

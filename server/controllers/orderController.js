@@ -75,10 +75,10 @@ exports.getAllOrders = async (req, res) => {
   }
 };
 
-// 3. Update Order Details & Quantities
+// 3. Update Order Details, Status, & Quantities (Polymorphic Handler)
 exports.updateOrder = async (req, res) => {
   const { id } = req.params; 
-  const { shippingAddress, whatsappNumber, items } = req.body; 
+  const { shippingAddress, whatsappNumber, items, status } = req.body; 
 
   const orderIdParsed = parseInt(id, 10);
   if (isNaN(orderIdParsed)) {
@@ -90,17 +90,42 @@ exports.updateOrder = async (req, res) => {
   try {
     await db.query('BEGIN');
 
-    // Update general shipping/contact details
-    const orderCheck = await db.query(
-      `UPDATE orders 
-       SET shipping_address = $1, whatsapp_number = $2 
-       WHERE id = $3 RETURNING id`,
-      [shippingAddress, whatsappNumber, orderIdParsed]
-    );
+    // --- INTERACTION PATTERN A: Admin Dashboard Status Router Interception ---
+    if (status !== undefined) {
+      const statusCheck = await db.query(
+        'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+        [status, orderIdParsed]
+      );
 
-    if (orderCheck.rows.length === 0) {
-      await db.query('ROLLBACK');
-      return res.status(404).json({ error: 'Order profile targeting not found' });
+      if (statusCheck.rows.length === 0) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Order profile targeting not found to update status' });
+      }
+
+      // If ONLY changing status, bypass calculation blocks completely for performance safety
+      if (!items && !shippingAddress && !whatsappNumber) {
+        await db.query('COMMIT');
+        return res.status(200).json({ 
+          message: 'Order tracking state updated successfully.', 
+          order: statusCheck.rows[0] 
+        });
+      }
+    }
+
+    // --- INTERACTION PATTERN B: Shipping Profile details mutations ---
+    if (shippingAddress !== undefined || whatsappNumber !== undefined) {
+      const orderCheck = await db.query(
+        `UPDATE orders 
+         SET shipping_address = COALESCE($1, shipping_address), 
+             whatsapp_number = COALESCE($2, whatsapp_number) 
+         WHERE id = $3 RETURNING id`,
+        [shippingAddress || null, whatsappNumber || null, orderIdParsed]
+      );
+
+      if (orderCheck.rows.length === 0) {
+        await db.query('ROLLBACK');
+        return res.status(404).json({ error: 'Order profile targeting not found' });
+      }
     }
 
     // Loop and update nested line-item quantities safely
@@ -110,7 +135,7 @@ exports.updateOrder = async (req, res) => {
         if (isNaN(itemIdParsed)) {
           await db.query('ROLLBACK');
           return res.status(400).json({
-            error: `Invalid or missing item_id inside items array payload. Ensure your frontend sends 'item_id'. Received: "${item.item_id}"`,
+            error: `Invalid or missing item_id inside items array payload. Received: "${item.item_id}"`,
             offendingItem: item
           });
         }
@@ -173,7 +198,6 @@ exports.deleteOrder = async (req, res) => {
 
   try {
     await db.query('BEGIN');
-
     await db.query('DELETE FROM order_items WHERE order_id = $1', [id]);
     
     const result = await db.query('DELETE FROM orders WHERE id = $1 RETURNING *', [id]);
@@ -192,3 +216,41 @@ exports.deleteOrder = async (req, res) => {
   }
 };
 
+// 5. Update Order Status (Explicit Isolation Target - Sanitized)
+exports.updateOrderStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const allowedStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+  
+  // Strip out prefixing '#' formatting structures if they seep into route metrics
+  const cleanId = typeof id === 'string' ? id.replace('#', '') : id;
+  const orderId = parseInt(cleanId, 10);
+
+  if (isNaN(orderId)) {
+    return res.status(400).json({ error: `Invalid order ID value received: "${id}"` });
+  }
+
+  if (!status || !allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid order status', allowedStatuses });
+  }
+
+  try {
+    const result = await db.query(
+      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+      [status, orderId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Order profile matrix targeting not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Order status updated successfully',
+      order: result.rows[0]
+    });
+  } catch (error) {
+    console.error('Status Update Error:', error);
+    return res.status(500).json({ error: 'Server error updating order status' });
+  }
+};
