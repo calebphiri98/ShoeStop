@@ -1,9 +1,8 @@
-
 const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 
-// Bring in your multer instance from server.js to intercept the files
+// Bring in your multer instance to intercept the incoming media streams
 const multer = require('multer');
 const path = require('path');
 
@@ -30,15 +29,8 @@ router.patch('/:id', productController.updateProductPrice);
 // ⚡ Dynamic Asset Upload Routing Route - Intercepts 'image' file matching frontend FormData key name
 router.post('/upload', upload.single('image'), productController.uploadProductImage);
 
+// 🗑️ Active Entry Purge Route - Destroys item matching key target constraints
+router.delete('/:id', productController.deleteProductEntry);
+
 module.exports = router;
 
-// const express = require('express');
-// const router = express.Router();
-// const productController = require('../controllers/productController');
-// // const { protect, admin } = require('../middleware/authMiddleware'); // add if protecting
-
-// router.get('/', productController.getProducts);
-// router.post('/', productController.createProduct); // Link to create method
-// router.patch('/:id', productController.updateProductPrice); // Link to pricing modifier
-
-// module.exports = router;
