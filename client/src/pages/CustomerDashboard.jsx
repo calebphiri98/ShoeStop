@@ -292,7 +292,7 @@ const CustomerDashboard = () => {
             <h4 className="font-bold text-primary uppercase text-sm tracking-wide mb-1">Need Order Assistance?</h4>
             <p className="text-xs text-gray-500 mb-4">Chat with our specialized concierge team on WhatsApp regarding modifications, tracking metrics, or customized sizing adjustments.</p>
             <a 
-              href="https://wa.me/995727978" 
+              href="https://wa.me/994950382" 
               target="_blank" 
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center w-full bg-success text-white py-3 font-bold uppercase tracking-wider text-xs shadow-sm hover:opacity-90 transition-opacity"

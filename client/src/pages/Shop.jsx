@@ -140,7 +140,7 @@ const Shop = () => {
                     
                     {/* Native App-like Sticky WhatsApp Short Link Hook */}
                     <a
-                      href={`https://wa.me/265XXXXXXXXX?text=${encodeURIComponent(
+                      href={`https://wa.me/265994950382?text=${encodeURIComponent(
                         `Hi ShoeStop & More! I'm interested in buying: ${product.name} (${formatCurrency(product.price)}). Is this available?`
                       )}`}
                       target="_blank"
