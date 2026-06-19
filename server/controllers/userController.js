@@ -4,7 +4,8 @@ const jwt = require('jsonwebtoken');
 
 // Register a new user
 exports.registerUser = async (req, res) => {
-  const { name, email, password } = req.body;
+  // Pull role alongside registration profile fields
+  const { name, email, password, role } = req.body;
 
   try {
     // Check if user exists
@@ -17,10 +18,13 @@ exports.registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Insert user into DB
+    // Fall back to customer if no scope parameters were set (Public Signups)
+    const finalRole = role || 'customer';
+
+    // Insert user into DB using explicitly handled parameter mapping $4
     const result = await db.query(
-      'INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email, role',
-      [name, email, passwordHash]
+      'INSERT INTO users (name, email, password_hash, role) VALUES ($1, $2, $3, $4) RETURNING id, name, email, role',
+      [name, email, passwordHash, finalRole]
     );
 
     const newUser = result.rows[0];
