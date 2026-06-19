@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom'; // Added Link for routing navigation
+import { useNavigate, Link } from 'react-router-dom'; 
 import Footer from '../components/Footer';
 import API_URL from '../config/api';
 
@@ -16,7 +16,17 @@ const CustomerDashboard = () => {
   const [editWhatsapp, setEditWhatsapp] = useState('');
   const [editItems, setEditItems] = useState([]); 
 
-  // Safely parses responses, checking content types beforehand
+  // 🛠️ Dynamic MK Format Engine Mapping 
+  const formatCurrency = (priceValue) => {
+    return new Intl.NumberFormat('en-MW', {
+      style: 'currency',
+      currency: 'MWK',
+      minimumFractionDigits: 0
+    })
+    .format(priceValue)
+    .replace('MWK', 'MK'); 
+  };
+
   const handleFetchResponse = async (response) => {
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.includes("application/json")) {
@@ -70,7 +80,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Open Edit Mode & Clone State values
   const startEditing = (order) => {
     setEditingOrderId(order.id);
     setEditAddress(order.shipping_address || '');
@@ -156,7 +165,6 @@ const CustomerDashboard = () => {
             <div className="text-center py-12">
               <span className="text-4xl">📦</span>
               <p className="text-gray-500 mt-4 font-medium mb-6">No order placements found under this name.</p>
-              {/* ADDED BROWSE BUTTON FOR EMPTY STATE */}
               <Link 
                 to="/" 
                 className="inline-block bg-primary text-secondary px-6 py-3 font-bold uppercase text-xs tracking-wider hover:bg-black transition-colors"
@@ -178,7 +186,8 @@ const CustomerDashboard = () => {
                         <p className="text-xs text-gray-400">{new Date(order.created_at).toLocaleDateString()}</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xl font-bold text-primary block">${Number(order.total_amount).toFixed(2)}</span>
+                        {/* 🛠️ FIX: Applied formatCurrency() layout wrapper here */}
+                        <span className="text-xl font-bold text-primary block">{formatCurrency(Number(order.total_amount))}</span>
                         <span className="inline-block bg-amber-100 text-amber-800 text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider font-semibold mt-1">
                           {order.status}
                         </span>
@@ -190,7 +199,6 @@ const CustomerDashboard = () => {
                       <p className="text-xs mercantile-accent font-bold uppercase tracking-wider text-gray-400">Items Ordered:</p>
                       
                       {isCurrentEditRow ? (
-                        // EDIT STATE PRODUCTS: Interactive Quantity Adjuster
                         editItems.map((item, idx) => (
                           <div key={idx} className="flex justify-between items-center text-sm border-b border-gray-200/50 pb-2 last:border-0">
                             <div>
@@ -205,7 +213,6 @@ const CustomerDashboard = () => {
                           </div>
                         ))
                       ) : (
-                        // NORMAL DISPLAY STATE PRODUCTS
                         order.items?.map((item, idx) => (
                           <div key={idx} className="flex justify-between text-sm text-textDark border-b border-gray-200/50 pb-2 last:border-0">
                             <div>
@@ -275,7 +282,6 @@ const CustomerDashboard = () => {
                 <span className="font-medium text-primary">June 2026</span>
               </div>
               
-              {/* ADDED PERMANENT QUICK BROWSE ACTION BUTTON */}
               <div className="pt-2 border-t border-gray-100">
                 <Link 
                   to="/" 
