@@ -1,0 +1,22 @@
+node_modules/
+.env
+.env.*
+!.env.example
+dist/
+build/
+coverage/
+.DS_Store
+# Dependencies
+node_modules/
+
+.env
+.env.*
+!.env.example
+
+dist/
+build/
+coverage/
+
+
+server/uploads/*
+!server/uploads/.gitkeep
