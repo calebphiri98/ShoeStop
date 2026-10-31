@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, Navigate, useLocation } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext'; // Import hook for state checking
-import { CartProvider } from './context/CartContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { CartProvider, useCart } from './context/CartContext';
 import Shop from './pages/Shop';
 import Checkout from './pages/Checkout';
 import AdminDashboard from './pages/AdminDashboard';
@@ -9,50 +9,139 @@ import CustomerDashboard from './pages/CustomerDashboard';
 import Hero from './components/Hero';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import { whatsappLink } from './config/contact';
+import { CartIcon, UserIcon, ChatIcon, MenuIcon, CloseIcon, ChevronRightIcon } from './components/Icons';
 
-// Protected Route Wrapper for Auth Interception
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
-  
-  // If user is not authenticated, bounce them to the login layout page
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return children;
 };
 
+const useCartCount = () => {
+  const { cart } = useCart();
+  return cart.reduce((total, item) => total + item.quantity, 0);
+};
 
 const Navbar = () => {
   const { user } = useAuth();
+  const { pathname } = useLocation();
+  const count = useCartCount();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  const linkClass = (path) =>
+    `text-xs uppercase tracking-[0.2em] font-semibold transition-colors ${
+      pathname === path ? 'text-accent' : 'text-secondary/80 hover:text-accent'
+    }`;
+
+  const menuLinkClass = (path) =>
+    `flex items-center justify-between py-4 border-b border-white/10 text-sm uppercase tracking-[0.2em] font-semibold ${
+      pathname === path ? 'text-accent' : 'text-secondary'
+    }`;
 
   return (
-    <nav className="bg-primary text-secondary p-4 sticky top-0 z-50 flex justify-between items-center border-b border-accent/20">
-      <Link to="/" className="text-xl font-bold tracking-widest text-accent uppercase">ShoeStop & More</Link>
-      <div className="space-x-4 md:space-x-6 text-sm uppercase tracking-wider flex items-center">
-        <Link to="/shop" className="hover:text-accent transition-colors hidden md:inline">Shop</Link>
-        <Link to="/checkout" className="hover:text-accent transition-colors hidden md:inline">Cart/Checkout</Link>
-        
-       
-        <a 
-          href="https://wa.me/994950382" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="hover:text-accent transition-colors hidden md:inline"
+    <header className="sticky top-0 z-50 bg-primary border-b border-accent/20">
+      <nav className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <Link
+          to="/"
+          className="font-display font-extrabold text-base sm:text-xl tracking-[0.16em] text-accent uppercase whitespace-nowrap"
         >
-          Contact
-        </a>
-        
-        {/* Dynamic Context Button Labeling based on Session existence */}
-        <Link to="/login" className="hover:text-accent transition-colors md:ml-4 md:border-l md:pl-4 border-gray-600">
-          {user ? 'My Account' : 'Login / Sign Up'}
+          ShoeStop <span className="text-secondary">&amp; More</span>
         </Link>
-      </div>
-    </nav>
+
+        <div className="hidden md:flex items-center gap-8">
+          <Link to="/" className={linkClass('/')}>Home</Link>
+          <Link to="/shop" className={linkClass('/shop')}>Shop</Link>
+          <Link to="/checkout" className={linkClass('/checkout')}>Cart / Checkout</Link>
+          <a
+            href={whatsappLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs uppercase tracking-[0.2em] font-semibold text-secondary/80 hover:text-accent transition-colors"
+          >
+            Contact
+          </a>
+        </div>
+
+        <div className="flex items-center gap-1 sm:gap-3">
+          <Link to="/checkout" aria-label="Cart" className="relative p-2 text-secondary hover:text-accent transition-colors">
+            <CartIcon className="w-5 h-5" />
+            {count > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-accent text-primary text-[10px] font-bold flex items-center justify-center">
+                {count}
+              </span>
+            )}
+          </Link>
+          <Link
+            to="/login"
+            className="hidden md:inline-flex border border-accent text-accent hover:bg-accent hover:text-primary px-4 py-2 text-xs uppercase font-semibold tracking-wider transition-colors"
+          >
+            {user ? 'My Account' : 'Login / Sign Up'}
+          </Link>
+          <button
+            onClick={() => setOpen((value) => !value)}
+            aria-label={open ? 'Close menu' : 'Open menu'}
+            aria-expanded={open}
+            className="md:hidden p-2 text-secondary hover:text-accent transition-colors"
+          >
+            {open ? <CloseIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+          </button>
+        </div>
+      </nav>
+
+      {open && (
+        <div className="md:hidden bg-primary border-t border-accent/20 animate-fade-in">
+          <div className="container mx-auto px-4 pb-4 flex flex-col">
+            <Link to="/" className={menuLinkClass('/')}>
+              Home
+              <ChevronRightIcon className="w-4 h-4 text-accent" />
+            </Link>
+            <Link to="/shop" className={menuLinkClass('/shop')}>
+              Shop
+              <ChevronRightIcon className="w-4 h-4 text-accent" />
+            </Link>
+            <Link to="/checkout" className={menuLinkClass('/checkout')}>
+              <span className="flex items-center gap-2">
+                Cart / Checkout
+                {count > 0 && (
+                  <span className="min-w-5 h-5 px-1.5 rounded-full bg-accent text-primary text-[10px] font-bold flex items-center justify-center">
+                    {count}
+                  </span>
+                )}
+              </span>
+              <ChevronRightIcon className="w-4 h-4 text-accent" />
+            </Link>
+            <Link to="/login" className={menuLinkClass('/login')}>
+              <span className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4" />
+                {user ? 'My Account' : 'Login / Sign Up'}
+              </span>
+              <ChevronRightIcon className="w-4 h-4 text-accent" />
+            </Link>
+            <a
+              href={whatsappLink()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 flex items-center justify-center gap-2 bg-success text-primary py-3.5 text-xs uppercase tracking-[0.2em] font-bold"
+            >
+              <ChatIcon className="w-4 h-4" />
+              Chat On WhatsApp
+            </a>
+          </div>
+        </div>
+      )}
+    </header>
   );
 };
 
-// Layout shell that hides the public Navbar + bottom nav on admin/dashboard routes
 const AppShell = () => {
   const location = useLocation();
   const isBackoffice = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard');
@@ -62,42 +151,22 @@ const AppShell = () => {
       {!isBackoffice && <Navbar />}
       <div className="flex-grow">
         <Routes>
-          {/* Core Pages */}
           <Route path="/" element={<><Hero /><Shop /></>} />
           <Route path="/shop" element={<Shop />} />
-          
-          {/* PROTECTED CHECKOUT ROUTE */}
-          <Route 
-            path="/checkout" 
+          <Route
+            path="/checkout"
             element={
               <ProtectedRoute>
                 <Checkout />
               </ProtectedRoute>
-            } 
+            }
           />
-          
-          {/* Dashboards */}
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/dashboard" element={<CustomerDashboard />} />
-          
-          {/* Authentication Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>
       </div>
-      
-      {/* Sticky Bottom Navigation for Mobile-First UX */}
-      {!isBackoffice && (
-        <div className="md:hidden fixed bottom-0 inset-x-0 bg-primary border-t border-accent/20 flex justify-around py-3 text-xs uppercase tracking-wider text-secondary z-50">
-          <Link to="/shop" className="flex flex-col items-center"><span>👟</span><span>Shop</span></Link>
-          <Link to="/checkout" className="flex flex-col items-center"><span>🛒</span><span>Cart</span></Link>
-          
-          {/* Account Link maps directly to login */}
-          <Link to="/login" className="flex flex-col items-center"><span>👤</span><span>Account</span></Link>
-          
-          <a href="https://wa.me/995727978" className="flex flex-col items-center text-success"><span>💬</span><span>WhatsApp</span></a>
-        </div>
-      )}
     </div>
   );
 };
