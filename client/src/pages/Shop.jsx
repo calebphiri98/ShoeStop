@@ -1,19 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { useAuth } from '../context/AuthContext'; 
+import { useAuth } from '../context/AuthContext';
 import API_URL from '../config/api';
-import Footer from '../components/Footer'; 
+import Footer from '../components/Footer';
+import { whatsappLink } from '../config/contact';
+import { CartIcon, ChatIcon, CloseIcon, ArrowRightIcon } from '../components/Icons';
 
 const Shop = () => {
+  const location = useLocation();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-  const [selectedGender, setSelectedGender] = useState('All');
+  const [selectedGender, setSelectedGender] = useState(location.state?.gender || 'All');
   const [loading, setLoading] = useState(true);
-  
-  // 🛠️ BROUGHT IN clearCart FROM YOUR CONTEXT MATRIX TO TRIGGER REMOVALS
+
   const { cart, addToCart, clearCart } = useCart();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -21,7 +23,7 @@ const Shop = () => {
       .then((res) => res.json())
       .then((data) => {
         setProducts(data);
-        setFilteredProducts(data); 
+        setFilteredProducts(data);
         setLoading(false);
       })
       .catch((err) => {
@@ -46,10 +48,10 @@ const Shop = () => {
     return new Intl.NumberFormat('en-MW', {
       style: 'currency',
       currency: 'MWK',
-      minimumFractionDigits: 0 
+      minimumFractionDigits: 0
     })
-    .format(priceValue)
-    .replace('MWK', 'MK'); 
+      .format(priceValue)
+      .replace('MWK', 'MK');
   };
 
   const totalItemsInCart = cart.reduce((total, item) => total + item.quantity, 0);
@@ -57,35 +59,34 @@ const Shop = () => {
 
   const handleProceedToCart = () => {
     if (user && user.token) {
-      navigate('/checkout'); 
+      navigate('/checkout');
     } else {
-      navigate('/login'); 
+      navigate('/login');
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen justify-between bg-neutralBg/30">
-      <div className="container mx-auto px-3 sm:px-4 py-4 md:py-8 relative pb-36 flex-grow">
-        
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-6 pb-4 border-b border-gray-100">
+      <div id="products" className="container mx-auto px-3 sm:px-4 py-6 md:py-10 relative pb-36 flex-grow scroll-mt-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 pb-4 border-b border-gray-200">
           <div>
-            <h1 className="text-2xl md:text-3xl font-black uppercase tracking-wider text-primary">
+            <p className="text-accent text-[10px] md:text-xs font-semibold uppercase tracking-[0.3em] mb-1">
+              Curated premium selection
+            </p>
+            <h2 className="font-display text-2xl md:text-3xl font-extrabold uppercase tracking-wider text-primary">
               {selectedGender === 'All' ? 'All Styles' : selectedGender}
-            </h1>
-            <p className="text-gray-400 text-[10px] md:text-xs mt-0.5">Curated premium selection</p>
+            </h2>
           </div>
 
-          {/* Filter Track */}
           <div className="flex overflow-x-auto pb-1 -mx-3 px-3 gap-2 scrollbar-none md:flex-wrap md:overflow-visible md:pb-0 md:mx-0 md:px-0">
             {filterTabs.map((gender) => (
               <button
                 key={gender}
                 onClick={() => setSelectedGender(gender)}
-                className={`px-5 py-2 text-xs uppercase font-bold tracking-wider transition-all duration-200 border shrink-0 snap-center ${
+                className={`px-5 py-2 text-xs uppercase font-bold tracking-wider transition-all duration-200 border shrink-0 ${
                   selectedGender === gender
-                    ? 'bg-primary border-primary text-secondary'
-                    : 'bg-white border-gray-200 text-gray-500'
+                    ? 'bg-primary border-primary text-accent'
+                    : 'bg-white border-gray-200 text-gray-500 hover:border-primary hover:text-primary'
                 }`}
               >
                 {gender}
@@ -99,8 +100,7 @@ const Shop = () => {
             <p className="text-gray-500 font-medium tracking-wide animate-pulse text-sm">Loading premium styles...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 px-4 border border-dashed border-gray-200 bg-white shadow-sm">
-            <span className="text-4xl block mb-2">👟</span>
+          <div className="text-center py-16 px-4 border border-dashed border-gray-300 bg-white">
             <p className="text-gray-400 font-medium uppercase tracking-wider text-xs">
               No products available in "{selectedGender}".
             </p>
@@ -108,92 +108,92 @@ const Shop = () => {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
             {filteredProducts.map((product) => (
-              <div 
-                key={product.id} 
-                className="group flex flex-col justify-between bg-white p-2 border border-gray-100 shadow-sm hover:shadow-md transition-shadow duration-300"
+              <div
+                key={product.id}
+                className="group flex flex-col bg-white border border-gray-100 hover:border-accent/40 hover:shadow-lg transition-all duration-300"
               >
-                <div>
-                  <div className="relative overflow-hidden bg-neutralBg mb-2 aspect-[4/5]">
-                    <img
-                      src={product.images?.[0]}
-                      alt={product.name}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <span className="absolute top-1 right-1 text-[9px] uppercase font-bold text-gray-500 bg-white/90 backdrop-blur-xs px-1.5 py-0.5 shadow-xs">
+                <div className="relative overflow-hidden bg-neutralBg aspect-[4/5]">
+                  <img
+                    src={product.images?.[0]}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                  {product.gender && (
+                    <span className="absolute top-2 left-2 text-[9px] uppercase font-bold tracking-wider bg-primary text-accent px-2 py-1">
                       {product.gender}
                     </span>
-                  </div>
-
-                  <h3 className="text-textDark font-medium line-clamp-2 text-xs md:text-sm min-h-[2rem] px-0.5 leading-tight">
-                    {product.name}
-                  </h3>
+                  )}
                 </div>
 
-                <div>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mt-2 pt-1 border-t border-gray-50/50 gap-1.5">
-                    <p className="text-primary font-black text-sm md:text-base whitespace-nowrap">
-                      {formatCurrency(product.price)}
-                    </p>
-                    
+                <div className="flex flex-col flex-grow p-3">
+                  <h3 className="text-textDark font-semibold text-xs md:text-sm line-clamp-2 min-h-[2.25rem] leading-snug">
+                    {product.name}
+                  </h3>
+                  <p className="text-primary font-extrabold text-sm md:text-base mt-2 whitespace-nowrap">
+                    {formatCurrency(product.price)}
+                  </p>
+
+                  <div className="mt-auto pt-3 flex flex-col gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product);
+                      }}
+                      className="flex items-center justify-center gap-2 w-full bg-primary text-secondary py-2.5 text-[11px] font-bold uppercase tracking-widest hover:bg-accent hover:text-primary active:bg-accent active:text-primary transition-colors duration-150"
+                    >
+                      <CartIcon className="w-4 h-4" />
+                      Add To Cart
+                    </button>
                     <a
-                      href={`https://wa.me/265994950382?text=${encodeURIComponent(
+                      href={whatsappLink(
                         `Hi ShoeStop & More! I'm interested in buying: ${product.name} (${formatCurrency(product.price)}). Is this available?`
-                      )}`}
+                      )}
                       target="_blank"
                       rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()} 
-                      className="bg-[#25D366] text-white w-full sm:w-auto text-center justify-center px-2 py-1 text-[10px] font-bold uppercase tracking-wider rounded-xs flex items-center gap-1 active:bg-[#1ebd54]"
+                      onClick={(e) => e.stopPropagation()}
+                      className="flex items-center justify-center gap-2 w-full border border-success text-success py-2 text-[10px] font-bold uppercase tracking-wider hover:bg-success hover:text-white active:bg-success active:text-white transition-colors duration-150"
                     >
-                      <span className="text-xs">💬</span> WhatsApp
+                      <ChatIcon className="w-4 h-4" />
+                      Ask On WhatsApp
                     </a>
                   </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      addToCart(product);
-                    }}
-                    className="w-full mt-2.5 bg-primary text-secondary py-2.5 text-center uppercase text-[11px] md:text-xs font-bold tracking-widest active:bg-accent active:text-primary transition-colors duration-150"
-                  >
-                    🛒 Add To Cart
-                  </button>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* 🛠️ MODIFIED STICKY BANNER BLOCK */}
         {totalItemsInCart > 0 && (
-          <div className="fixed bottom-18 left-1/2 transform -translate-x-1/2 w-[92%] max-w-md bg-primary text-secondary px-4 py-3.5 shadow-2xl border border-accent/20 flex justify-between items-center z-50 animate-fade-in rounded-none backdrop-blur-xs">
+          <div className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 w-[92%] max-w-md bg-primary text-secondary px-4 py-3 shadow-2xl border border-accent/30 flex justify-between items-center gap-3 z-40 animate-fade-in">
             <div className="flex items-center gap-3">
-              {/* 🛠️ ADDED CANCEL BUTTON TRACK WITH ACTIVE STATE */}
-              <button 
+              <button
                 onClick={() => {
-                  if(window.confirm("Clear all items from your shopping bag?")) {
+                  if (window.confirm('Clear all items from your shopping bag?')) {
                     clearCart();
                   }
                 }}
-                className="text-gray-400 hover:text-red-400 text-xs uppercase font-bold border border-gray-700/60 px-1.5 py-1 bg-black/20 transition-colors"
-                title="Cancel and Clear Bag"
+                className="flex items-center gap-1 text-gray-400 hover:text-red-400 text-[10px] uppercase font-bold border border-gray-700 px-2 py-1.5 transition-colors"
+                title="Clear bag"
               >
-                ✕ Clear
+                <CloseIcon className="w-3 h-3" />
+                Clear
               </button>
-              
+
               <div>
                 <p className="font-bold text-[11px] sm:text-xs tracking-wider uppercase">
-                  Bag Updated ({totalItemsInCart})
+                  Bag ({totalItemsInCart})
                 </p>
                 <p className="text-[9px] text-gray-400 tracking-wide uppercase mt-0.5">Secure your premium pair</p>
               </div>
             </div>
-            
+
             <button
               onClick={handleProceedToCart}
-              className="bg-accent text-primary px-4 py-2 text-xs font-black uppercase tracking-wider hover:bg-white active:scale-95 transition-all duration-150 shadow-md"
+              className="flex items-center gap-1.5 bg-accent text-primary px-4 py-2 text-xs font-extrabold uppercase tracking-wider hover:bg-white active:scale-95 transition-all duration-150"
             >
-              Checkout →
+              Checkout
+              <ArrowRightIcon className="w-4 h-4" />
             </button>
           </div>
         )}
